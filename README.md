@@ -3,7 +3,8 @@
 ## What is this?
 This is a compatibility layer that aims to allow access to a native version of
 [SDL](https://libsdl.org/) from portable executables linked through
-[Cosmopolitan Libc](http://justine.lol/cosmopolitan/).
+[Cosmopolitan Libc](http://justine.lol/cosmopolitan/). The provided API is pinned
+to SDL 2.26.5.
 
 ## How does this work?
 This replaces the entire implementation of SDL with a shim which leverages its
@@ -39,3 +40,5 @@ portable executables:
   there's a pretty heavy overhead to `cosmo_dlopen` already.
 - A similarly spirited OpenGL shim (CosmoGLEW?).
 - Testing real code with callbacks from SDL.
+- Explore how to properly deal with versioning mismatchs between the vendored headers and the
+  system SDL.

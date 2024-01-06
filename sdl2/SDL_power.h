@@ -48,6 +48,7 @@ typedef enum
     SDL_POWERSTATE_CHARGED       /**< Plugged in, battery charged */
 } SDL_PowerState;
 
+
 /**
  * Get the current power supply details.
  *
@@ -64,17 +65,17 @@ typedef enum
  * It's possible a platform can only report battery percentage or time left
  * but not both.
  *
- * \param seconds seconds of battery life left, you can pass a NULL here if
- *                you don't care, will return -1 if we can't determine a
- *                value, or we're not running on a battery
- * \param percent percentage of battery life left, between 0 and 100, you can
- *                pass a NULL here if you don't care, will return -1 if we
- *                can't determine a value, or we're not running on a battery
+ * \param secs seconds of battery life left, you can pass a NULL here if you
+ *             don't care, will return -1 if we can't determine a value, or
+ *             we're not running on a battery
+ * \param pct percentage of battery life left, between 0 and 100, you can pass
+ *            a NULL here if you don't care, will return -1 if we can't
+ *            determine a value, or we're not running on a battery
  * \returns an SDL_PowerState enum representing the current battery state.
  *
  * \since This function is available since SDL 2.0.0.
  */
-extern DECLSPEC SDL_PowerState SDLCALL SDL_GetPowerInfo(int *seconds, int *percent);
+extern DECLSPEC SDL_PowerState SDLCALL SDL_GetPowerInfo(int *secs, int *pct);
 
 /* Ends C function definitions when using C++ */
 #ifdef __cplusplus
