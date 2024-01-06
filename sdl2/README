@@ -1,0 +1,5 @@
+Origin: https://github.com/libsdl-org/SDL/releases/tag/release-2.28.5
+License: see LICENSE
+Local changes:
+ - SDL_dynapi_cosmo.c
+ - SDL_config.h
