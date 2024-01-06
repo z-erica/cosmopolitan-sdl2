@@ -21,3 +21,18 @@ You will need the [cosmocc](https://github.com/jart/cosmopolitan/blob/master/too
 toolchain in your path. At least version 3.2.1 is needed for proper dlopen support.
 Running a compatible version of make will primarily result in a portable executable named `imgui_example.com`, which contains the demo
 of the [Dear ImGui](https://github.com/ocornut/imgui) immediate-mode user interface toolchain.
+
+## Ideas for improvement
+- Implementing a proper chain of fallbacks for the shared object filename. A `SDL_COSMO_API`
+  override environment variable, separate from `SDL_DYNAMIC_API` (which, if set,
+  would apply to the library loaded by cosmo and not to this wrapper).
+- Bundling a prebuilt native library for systems where it makes more sense (Windows).
+  This could potentially make fully self contained source builds more awkward, however.
+- The indirection is currently double; these wrappers are indirect jumps through a
+  jump table, which hooks into the native library's own dynamic API wrappers. This is in
+  constrast to the original SDL API, which calls into the overriding DLL to remotely rewrite
+  the calling application's jump table to its own actual implementations (see `SDL_DYNAPI_entry`
+  in `SDL_dynapi.c`). I'm unsure whether emulating this would be much of a benefit, considering
+  there's a pretty heavy overhead to `cosmo_dlopen` already.
+- A similarly spirited OpenGL shim (CosmoGLEW?).
+- Testing real code with callbacks from SDL.
