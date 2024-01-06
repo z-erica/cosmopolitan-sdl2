@@ -19,8 +19,11 @@ See `sdl2/SDL_dynapi_cosmo.c` for specifics.
 ## How do you build this?
 You will need the [cosmocc](https://github.com/jart/cosmopolitan/blob/master/tool/cosmocc/README.md)
 toolchain in your path. At least version 3.2.1 is needed for proper dlopen support.
-Running a compatible version of make will primarily result in a portable executable named `imgui_example.com`, which contains the demo
-of the [Dear ImGui](https://github.com/ocornut/imgui) immediate-mode user interface toolchain.
+Running a compatible version of make will yield following the examples in the `o/` subdirectory, as
+portable executables:
+- `imgui_example.com` contains the demo of the [Dear ImGui](https://github.com/ocornut/imgui)
+  immediate-mode user interface toolchain.
+- `oggplay.com` is a minimal player for OGG audio, built on top of [stb\_vorbis](https://github.com/nothings/stb).
 
 ## Ideas for improvement
 - Implementing a proper chain of fallbacks for the shared object filename. A `SDL_COSMO_API`
