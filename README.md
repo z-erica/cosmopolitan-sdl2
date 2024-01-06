@@ -18,6 +18,6 @@ See `sdl2/SDL_dynapi_cosmo.c` for specifics.
 
 ## How do you build this?
 You will need the [cosmocc](https://github.com/jart/cosmopolitan/blob/master/tool/cosmocc/README.md)
-toolchain in your path. Running a compatible version of make will primarily
-result in a portable executable named `imgui_example.com`, which contains the demo
+toolchain in your path. At least version 3.2.1 is needed for proper dlopen support.
+Running a compatible version of make will primarily result in a portable executable named `imgui_example.com`, which contains the demo
 of the [Dear ImGui](https://github.com/ocornut/imgui) immediate-mode user interface toolchain.
