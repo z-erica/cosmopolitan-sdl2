@@ -71,22 +71,19 @@ $(SDL2_DYLIB_DMG):
 $(SDL2_DYLIB): $(SDL2_DYLIB_DMG)
 	7z e $< SDL2/SDL2.framework/Versions/A/SDL2 -oo
 	mv o/SDL2 o/libSDL2.dylib
+	touch o/libSDL2.dylib
 
 o/SDL2.dll.zip.o: o/SDL2.dll
 	@mkdir -p $(dir $@)/.aarch64
 	@echo '$(SDL2_DLL_HASH)  o/SDL2.dll' | sha256sum --check --quiet
-	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a x86_64 -o $@ $<
-	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a aarch64 -o $(dir $@)/.aarch64/$(notdir $@) $<
+	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a x86_64 -o $@ -C 1 $<
+	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a aarch64 -o $(dir $@)/.aarch64/$(notdir $@) -C 1 $<
 o/libSDL2.dylib.zip.o: o/libSDL2.dylib
 	@mkdir -p $(dir $@)/.aarch64
 	@echo '$(SDL2_DYLIB_HASH)  o/libSDL2.dylib' | sha256sum --check --quiet
-	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a x86_64 -o $@ $<
-	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a aarch64 -o $(dir $@)/.aarch64/$(notdir $@) $<
+	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a x86_64 -o $@ -C 1 $<
+	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a aarch64 -o $(dir $@)/.aarch64/$(notdir $@) -C 1 $<
 
-o/%.zip.o: %
-	@mkdir -p $(dir $@)/.aarch64
-	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a x86_64 -o $@ $<
-	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a aarch64 -o $(dir $@)/.aarch64/$(notdir $@) $<
 o/%.o: %.c
 	$(CC) -c $(CFLAGS) -o $@ $<
 o/%.o: o/%.c
