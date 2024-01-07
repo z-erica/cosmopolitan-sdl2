@@ -57,6 +57,9 @@
 #define SDL_AddTimer SDL_AddTimer_REAL
 #define SDL_SetWindowHitTest SDL_SetWindowHitTest_REAL
 
+/* set to 1 to skip the search for system libraries */
+#define FORCE_BUNDLED_LIBRARY 0
+
 /* Can't use the macro for varargs nonsense. This is atrocious. */
 #define SDL_DYNAPI_VARARGS_LOGFN(_static, name, initcall, logname, prio)                                     \
     _static void SDLCALL SDL_Log##logname##name(int category, SDL_PRINTF_FORMAT_STRING const char *fmt, ...) \
@@ -190,80 +193,79 @@ static void InitCosmoDynamicAPI(void);
 #undef SDL_DYNAPI_PROC_NO_VARARGS
 SDL_DYNAPI_VARARGS(, , InitCosmoDynamicAPI())
 
-/* NOTE: i do not know enough to make this obviously efficient */
-/* its perfectly possible there are also correctness issues */
-static void ExtractFromZip(int from_fd, int to_fd) {
-    long offset;
-    long bytes_read, bytes_written;
-    char buffer[1024];
-
-    offset = 0;
-    while (1) {
-        bytes_read = pread(from_fd, buffer, sizeof buffer, offset);
-	if (bytes_read == 0) break; /* eof */
-	assert(bytes_read > 0);
-
-	bytes_written = pwrite(to_fd, buffer, bytes_read, offset);
-	/* FIXME: if something breaks, it may be because of this assumption */
-	assert(bytes_written == bytes_read);
-
-	offset += bytes_written;
+/* adapted from llamafile_extract */
+int ExtractFromZip(const char *zip, const char *to) {
+    int fdin, fdout;
+    char stage[PATH_MAX];
+    FLOGF(stderr, "extracting %s to %s", zip, to);
+    strlcpy(stage, to, sizeof(stage));
+    if (strlcat(stage, ".XXXXXX", sizeof(stage)) >= sizeof(stage)) {
+        errno = ENAMETOOLONG;
+        perror(to);
+        return 0;
     }
-}
-
-static int TryDLLExtractPath(int from_fd, const char *to) {
-    int to_fd;
-
-    to_fd = open(to, O_WRONLY|O_CREAT, S_IRWXU);
-    if (to_fd < 0) {
-        FWARNF(stderr, "could not extract SDL2.dll to %s: %s", to, strerror(errno));
-	return 0;
+    if ((fdout = mkostemp(stage, O_CLOEXEC)) == -1) {
+        perror(stage);
+        return 0;
     }
-
-    ExtractFromZip(from_fd, to_fd);
-
-    assert(close(to_fd) >= 0);
+    if ((fdin = open(zip, O_RDONLY | O_CLOEXEC)) == -1) {
+        perror(zip);
+        close(fdout);
+        unlink(stage);
+        return 0;
+    }
+    if (copyfd(fdin, fdout, -1) == -1) {
+        perror(zip);
+        close(fdin);
+        close(fdout);
+        unlink(stage);
+        return 0;
+    }
+    if (close(fdout)) {
+        perror(to);
+        close(fdin);
+        unlink(stage);
+        return 0;
+    }
+    if (close(fdin)) {
+        perror(zip);
+        unlink(stage);
+        return 0;
+    }
+    if (rename(stage, to)) {
+        perror(to);
+        unlink(stage);
+        return 0;
+    }
     return 1;
 }
 
 static void *ExtractDLL_x86_64(void)
 {
-    int from_fd = open("/zip/SDL2.dll", O_RDONLY);
-    if (from_fd < 0) {
-        FFATALF(stderr, "could not open bundled SDL2.dll: %s", strerror(errno));
-    }
-
-    /* for now, just try the current directory */
-    if (TryDLLExtractPath(from_fd, "SDL2.dll")) {
-        close(from_fd);
+    if (ExtractFromZip("/zip/SDL2.dll", "./SDL2.dll")) {
     	return cosmo_dlopen("./SDL2.dll", RTLD_LAZY | RTLD_LOCAL);
     } else {
-        FFATALF(stderr, "ran out of paths to extract SDL2.dll to");
+        FFATALF(stderr, "could not extract SDL.dll");
     }
 }
 
 static void *ExtractDylib(void)
 {
-    int from_fd = open("/zip/libSDL2.dylib", O_RDONLY);
-    if (from_fd < 0) {
-        FFATALF(stderr, "could not open bundled libSDL2.dylib: %s", strerror(errno));
-    }
-
-    /* for now, just try the current directory */
-    if (TryDLLExtractPath(from_fd, "libSDL2.dylib")) {
-        close(from_fd);
+    if (ExtractFromZip("/zip/libSDL2.dylib", "./libSDL2.dylib")) {
     	return cosmo_dlopen("./libSDL2.dylib", RTLD_LAZY | RTLD_LOCAL);
     } else {
-        FFATALF(stderr, "ran out of paths to extract libSDL2.dylib to");
+        FFATALF(stderr, "could not extract libSDL2.dylib");
     }
 }
 
 static void InitCosmoDynamicAPIOnce(void)
 {
     const char *libname_cascade[] = {
+#if !FORCE_BUNDLED_LIBRARY
 	    "libSDL2.so",
 	    "libSDL2-2.0.so",
 	    "SDL2.dll",
+#endif
 	    NULL
     };
     const char **libname;
