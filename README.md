@@ -11,11 +11,16 @@ This replaces the entire implementation of SDL with a shim which leverages its
 existing [dynamic API facility](https://wiki.libsdl.org/SDL2/README/dynapi) to
 hook into a version of SDL that is specific to the current runtime platform.
 
-Currently, this dynamic version of SDL can be provided in the following ways:
+Currently, this dynamic version of SDL is obtained through the first of these steps that is successful:
 - If a shared object called `libSDL2-2.0.so` is available to
   `cosmo_dlopen`, it is loaded, and the API shims hooked into it.
+- The same is attempted with the following fallback filenames, in order: `SDL2.dll`.
+- If the environment is x86\_64 Windows, then an official build of `SDL2.dll` is
+  extracted to the current directory and loaded.
 
-See `sdl2/SDL_dynapi_cosmo.c` for specifics.
+See `sdl2/SDL_dynapi_cosmo.c` for specifics. Note that the previous process runs
+the first time any SDL procedure is executed in any thread, and that failure is not
+recoverable.
 
 ## How do you build this?
 You will need the [cosmocc](https://github.com/jart/cosmopolitan/blob/master/tool/cosmocc/README.md)
@@ -25,6 +30,10 @@ portable executables:
 - `imgui_example.com` contains the demo of the [Dear ImGui](https://github.com/ocornut/imgui)
   immediate-mode user interface toolchain.
 - `oggplay.com` is a minimal player for OGG audio, built on top of [stb\_vorbis](https://github.com/nothings/stb).
+
+Please note that this process will download several files, including prebuilt binaries for some of the
+runtime targets. The hashes of these executable files are validated with known values to ensure the
+resulting artifact is reproducible.
 
 ## The OpenGL loader
 To minimize the requirements on the native SDL implementation, the Dear ImGui demo is not bundled with its
@@ -41,3 +50,4 @@ transparently dispatches between calling conventions.
 - Bundling a prebuilt native library for systems where it makes more sense (Windows).
   This could potentially make fully self contained source builds more awkward, however.
 - Testing real code with callbacks from SDL.
+- Some way for errors in the dynamic api loading to be recoverable.
