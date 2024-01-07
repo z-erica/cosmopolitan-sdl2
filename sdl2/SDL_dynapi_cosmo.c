@@ -32,6 +32,7 @@
 #include "libc/runtime/runtime.h"
 #include "libc/thread/thread.h"
 #include "libc/dlopen/dlfcn.h"
+#include "libc/dce.h"
 
 #include "SDL.h"
 #include "SDL_syswm.h"
@@ -44,7 +45,8 @@
         va_list ap;                                                                                          \
         initcall;                                                                                            \
         va_start(ap, fmt);                                                                                   \
-        jump_table.SDL_LogMessageV(category, SDL_LOG_PRIORITY_##prio, fmt, ap);                              \
+        if (IsWindows()) jump_table.SDL_LogMessageV.ms_abi(category, SDL_LOG_PRIORITY_##prio,fmt, ap);       \
+        else jump_table.SDL_LogMessageV.sysv_abi(category, SDL_LOG_PRIORITY_##prio, fmt, ap);                \
         va_end(ap);                                                                                          \
     }
 
@@ -56,22 +58,27 @@
         va_list ap;                                                                                                                       \
         initcall;                                                                                                                         \
         va_start(ap, fmt);                                                                                                                \
-        result = jump_table.SDL_vsnprintf(buf, sizeof(buf), fmt, ap);                                                                     \
+        if (IsWindows()) result = jump_table.SDL_vsnprintf.ms_abi(buf, sizeof(buf), fmt, ap);                                             \
+        else result = jump_table.SDL_vsnprintf.sysv_abi(buf, sizeof(buf), fmt, ap);                                                       \
         va_end(ap);                                                                                                                       \
         if (result >= 0 && (size_t)result >= sizeof(buf)) {                                                                               \
             size_t len = (size_t)result + 1;                                                                                              \
-            str = (char *)jump_table.SDL_malloc(len);                                                                                     \
+            if (IsWindows()) str = (char *)jump_table.SDL_malloc.ms_abi(len);                                                             \
+            else str = (char *)jump_table.SDL_malloc.sysv_abi(len);                                                                       \
             if (str) {                                                                                                                    \
                 va_start(ap, fmt);                                                                                                        \
-                result = jump_table.SDL_vsnprintf(str, len, fmt, ap);                                                                     \
+                if (IsWindows()) result = jump_table.SDL_vsnprintf.ms_abi(str, len, fmt, ap);                                             \
+	        else result = jump_table.SDL_vsnprintf.sysv_abi(str, len, fmt, ap);                                                       \
                 va_end(ap);                                                                                                               \
             }                                                                                                                             \
         }                                                                                                                                 \
         if (result >= 0) {                                                                                                                \
-            result = jump_table.SDL_SetError("%s", str);                                                                                  \
+            if (IsWindows()) result = jump_table.SDL_SetError.ms_abi("%s", str);                                                          \
+            else result = jump_table.SDL_SetError.sysv_abi("%s", str);                                                                    \
         }                                                                                                                                 \
         if (str != buf) {                                                                                                                 \
-            jump_table.SDL_free(str);                                                                                                     \
+            if (IsWindows()) jump_table.SDL_free.ms_abi(str);                                                                             \
+            else jump_table.SDL_free.sysv_abi(str);                                                                                       \
         }                                                                                                                                 \
         return result;                                                                                                                    \
     }                                                                                                                                     \
@@ -81,7 +88,8 @@
         va_list ap;                                                                                                                       \
         initcall;                                                                                                                         \
         va_start(ap, fmt);                                                                                                                \
-        retval = jump_table.SDL_vsscanf(buf, fmt, ap);                                                                                    \
+        if (IsWindows()) retval = jump_table.SDL_vsscanf.ms_abi(buf, fmt, ap);                                                            \
+        else retval = jump_table.SDL_vsscanf.sysv_abi(buf, fmt, ap);                                                                      \
         va_end(ap);                                                                                                                       \
         return retval;                                                                                                                    \
     }                                                                                                                                     \
@@ -91,7 +99,8 @@
         va_list ap;                                                                                                                       \
         initcall;                                                                                                                         \
         va_start(ap, fmt);                                                                                                                \
-        retval = jump_table.SDL_vsnprintf(buf, maxlen, fmt, ap);                                                                          \
+        if (IsWindows()) retval = jump_table.SDL_vsnprintf.ms_abi(buf, maxlen, fmt, ap);                                                  \
+        else retval = jump_table.SDL_vsnprintf.sysv_abi(buf, maxlen, fmt, ap);                                                            \
         va_end(ap);                                                                                                                       \
         return retval;                                                                                                                    \
     }                                                                                                                                     \
@@ -101,7 +110,8 @@
         va_list ap;                                                                                                                       \
         initcall;                                                                                                                         \
         va_start(ap, fmt);                                                                                                                \
-        retval = jump_table.SDL_vasprintf(strp, fmt, ap);                                                                                 \
+        if (IsWindows()) retval = jump_table.SDL_vasprintf.ms_abi(strp, fmt, ap);                                                         \
+        else retval = jump_table.SDL_vasprintf.sysv_abi(strp, fmt, ap);                                                                   \
         va_end(ap);                                                                                                                       \
         return retval;                                                                                                                    \
     }                                                                                                                                     \
@@ -110,7 +120,8 @@
         va_list ap;                                                                                                                       \
         initcall;                                                                                                                         \
         va_start(ap, fmt);                                                                                                                \
-        jump_table.SDL_LogMessageV(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO, fmt, ap);                                         \
+        if (IsWindows()) jump_table.SDL_LogMessageV.ms_abi(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO, fmt, ap);                 \
+        else jump_table.SDL_LogMessageV.sysv_abi(SDL_LOG_CATEGORY_APPLICATION, SDL_LOG_PRIORITY_INFO, fmt, ap);                           \
         va_end(ap);                                                                                                                       \
     }                                                                                                                                     \
     _static void SDLCALL SDL_LogMessage##name(int category, SDL_LogPriority priority, SDL_PRINTF_FORMAT_STRING const char *fmt, ...)      \
@@ -118,7 +129,8 @@
         va_list ap;                                                                                                                       \
         initcall;                                                                                                                         \
         va_start(ap, fmt);                                                                                                                \
-        jump_table.SDL_LogMessageV(category, priority, fmt, ap);                                                                          \
+        if (IsWindows()) jump_table.SDL_LogMessageV.ms_abi(category, priority, fmt, ap);                                                  \
+        else jump_table.SDL_LogMessageV.sysv_abi(category, priority, fmt, ap);                                                            \
         va_end(ap);                                                                                                                       \
     }                                                                                                                                     \
     SDL_DYNAPI_VARARGS_LOGFN(_static, name, initcall, Verbose, VERBOSE)                                                                   \
@@ -128,13 +140,13 @@
     SDL_DYNAPI_VARARGS_LOGFN(_static, name, initcall, Error, ERROR)                                                                       \
     SDL_DYNAPI_VARARGS_LOGFN(_static, name, initcall, Critical, CRITICAL)
 
-/* Typedefs for function pointers for jump table, and predeclare funcs */
-/* The DEFAULT funcs will init jump table and then call real function. */
-/* The REAL funcs are the actual functions, name-mangled to not clash. */
-#define SDL_DYNAPI_PROC(rc, fn, params, args, ret) \
-    typedef rc (SDLCALL *SDL_DYNAPIFN_##fn) params;\
-    static rc SDLCALL fn##_DEFAULT params;         \
-    extern rc SDLCALL fn##_REAL params;
+/* Typedefs for function pointers for jump table */
+#define SDL_DYNAPI_PROC(rc, fn, params, args, ret)               \
+    typedef union {                                              \
+	void *ptr;                                               \
+        rc (*sysv_abi) params;                           \
+	rc (*__attribute__((__ms_abi__)) ms_abi) params; \
+    } SDL_DYNAPIFN_##fn;
 #include "SDL_dynapi_procs.inc"
 #undef SDL_DYNAPI_PROC
 
@@ -152,38 +164,23 @@ typedef struct
 #undef SDL_DYNAPI_PROC
 
 /* The actual jump table. */
-static SDL_DYNAPI_jump_table jump_table = {
-#define SDL_DYNAPI_PROC(rc, fn, params, args, ret) fn##_DEFAULT,
-#include "SDL_dynapi_procs.inc"
-#undef SDL_DYNAPI_PROC
-};
+static SDL_DYNAPI_jump_table jump_table = { 0 };
 
 static void InitCosmoDynamicAPI(void);
 
-/* Default functions init the function table then call right thing. */
-#define SDL_DYNAPI_PROC(rc, fn, params, args, ret) \
-    static rc SDLCALL fn##_DEFAULT params          \
-    {                                              \
-        InitCosmoDynamicAPI();                      \
-        ret jump_table.fn args;                    \
-    }
-#define SDL_DYNAPI_PROC_NO_VARARGS 1
-#include "SDL_dynapi_procs.inc"
-#undef SDL_DYNAPI_PROC
-#undef SDL_DYNAPI_PROC_NO_VARARGS
-SDL_DYNAPI_VARARGS(static, _DEFAULT, InitCosmoDynamicAPI())
-
 /* Public API functions to jump into the jump table. */
-#define SDL_DYNAPI_PROC(rc, fn, params, args, ret) \
-    rc SDLCALL fn params                           \
-    {                                              \
-        ret jump_table.fn args;                    \
+#define SDL_DYNAPI_PROC(rc, fn, params, args, ret)      \
+    rc SDLCALL fn params                                \
+    {                                                   \
+        InitCosmoDynamicAPI();                          \
+	if (IsWindows()) ret jump_table.fn.ms_abi args; \
+	else ret jump_table.fn.sysv_abi args;           \
     }
 #define SDL_DYNAPI_PROC_NO_VARARGS 1
 #include "SDL_dynapi_procs.inc"
 #undef SDL_DYNAPI_PROC
 #undef SDL_DYNAPI_PROC_NO_VARARGS
-SDL_DYNAPI_VARARGS(, , )
+SDL_DYNAPI_VARARGS(, , InitCosmoDynamicAPI())
 
 static void InitCosmoDynamicAPIOnce(void)
 {
@@ -195,19 +192,20 @@ static void InitCosmoDynamicAPIOnce(void)
 	abort();
     }
 
-#define SDL_DYNAPI_PROC(rc, fn, params, args, ret) \
-    jump_table.fn = cosmo_dlsym(lib, #fn); \
-    if (jump_table.fn == NULL) { \
-        kprintf("warning: failed to load symbol from native SDL: %s\n", \
-	    #fn, cosmo_dlerror()); \
-	abort(); \
-    }
+#define SDL_DYNAPI_PROC(rc, fn, params, args, ret)                         \
+    jump_table.fn.ptr = cosmo_dlsym(lib, #fn);                             \
+    if (jump_table.fn.ptr == NULL) {                                       \
+        kprintf("warning: failed to load symbol from native SDL: %s\n",    \
+	    #fn, cosmo_dlerror());                                         \
+	abort();                                                           \
+    }                                                                      \
+    if (!IsWindows()) jump_table.fn.ptr = cosmo_dltramp(jump_table.fn.ptr);
 #include "SDL_dynapi_procs.inc"
 #undef SDL_DYNAPI_PROC
 }
 
 static void InitCosmoDynamicAPI(void)
 {
-	static pthread_once_t once = PTHREAD_ONCE_INIT;
-	pthread_once(&once, InitCosmoDynamicAPIOnce);
+    static pthread_once_t once = PTHREAD_ONCE_INIT;
+    pthread_once(&once, InitCosmoDynamicAPIOnce);
 }
