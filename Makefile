@@ -9,9 +9,10 @@ CXXFLAGS = $(CFLAGS)
 SDL2_LIB = o/libSDL2.a
 SDL2_LIB_OBJS = o/sdl2/SDL_dynapi_cosmo.o
 
-SDL2_DLL_RELEASE = 2.28.5
+SDL2_BUNDLED_RELEASE = 2.28.5
+
 SDL2_DLL = o/SDL2.dll
-SDL2_DLL_ZIP = o/SDL2-$(SDL2_DLL_RELEASE)-win32-x64.zip
+SDL2_DLL_ZIP = o/SDL2-$(SDL2_BUNDLED_RELEASE)-win32-x64.zip
 SDL2_DLL_ZIP_URL = https://github.com/libsdl-org/SDL/releases/download/release-$(SDL2_DLL_RELEASE)/SDL2-$(SDL2_DLL_RELEASE)-win32-x64.zip
 # downloading opaque binaries off the internet is spooky!
 # so make sure its exactly a known version
@@ -74,4 +75,3 @@ o/%.o: %.cpp
 
 clean:
 	rm -rf o
-	rm -rf */.aarch64
