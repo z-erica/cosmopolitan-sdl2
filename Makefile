@@ -18,6 +18,13 @@ SDL2_DLL_ZIP_URL = https://github.com/libsdl-org/SDL/releases/download/release-$
 # so make sure its exactly a known version
 SDL2_DLL_HASH = de23db1694a3c7a4a735e7ecd3d214b2023cc2267922c6c35d30c7fc7370d677
 
+SDL2_DYLIB = o/libSDL2.dylib
+SDL2_DYLIB_DMG = o/SDL2-$(SDL2_BUNDLED_RELEASE).dmg
+SDL2_DYLIB_DMG_URL = https://github.com/libsdl-org/SDL/releases/download/release-$(SDL2_BUNDLED_RELEASE)/SDL2-$(SDL2_BUNDLED_RELEASE).dmg
+SDL2_DYLIB_HASH = cea415afd6d89a926478aad6be400760f20a28506e872641a17856582a84edfe
+
+SDL2_BUNDLED_OBJS = o/SDL2.dll.zip.o o/libSDL2.dylib.zip.o
+
 IMGUI_EXAMPLE = o/imgui_example.com
 IMGUI_EXAMPLE_OBJS = o/imgui/imgui.o \
 		     o/imgui/imgui_demo.o \
@@ -27,16 +34,16 @@ IMGUI_EXAMPLE_OBJS = o/imgui/imgui.o \
 		     o/imgui/imgui_impl_sdl2.o \
 		     o/imgui/imgui_example.o \
 		     o/gl3w/gl3w.o \
-		     o/SDL2.dll.zip.o
+		     $(SDL2_BUNDLED_OBJS)
 
 OGGPLAY_EXAMPLE = o/oggplay_example.com
 OGGPLAY_EXAMPLE_OBJS = o/oggplay/main.o \
-		       o/SDL2.dll.zip.o
+		       $(SDL2_BUNDLED_OBJS)
 
 default: $(IMGUI_EXAMPLE) $(OGGPLAY_EXAMPLE)
 
 $(SDL2_LIB): $(SDL2_LIB_OBJS)
-	$(AR) $(ARFLAGS) $@ $^
+	$(AR) r $@ $^
 
 $(IMGUI_EXAMPLE): $(IMGUI_EXAMPLE_OBJS) $(SDL2_LIB)
 	$(CC) $(LDLIBS) -o $@ $^
@@ -54,21 +61,29 @@ o/imgui/imgui_example.o: o/gl3w/GL/gl3w.h
 
 $(SDL2_DLL_ZIP):
 	@mkdir -p o
-	curl -L -o $@ $(SDL2_DLL_ZIP_URL)
+	curl -sL -o $@ $(SDL2_DLL_ZIP_URL)
 $(SDL2_DLL): $(SDL2_DLL_ZIP)
-	unzip -DD -o $< SDL2.dll -d o
+	unzip -q -DD -o $< SDL2.dll -d o
+
+$(SDL2_DYLIB_DMG):
+	@mkdir -p o
+	curl -sL -o $@ $(SDL2_DYLIB_DMG_URL)
+$(SDL2_DYLIB): $(SDL2_DYLIB_DMG)
+	7z e $< SDL2/SDL2.framework/Versions/A/SDL2 -oo
+	mv o/SDL2 o/libSDL2.dylib
 
 o/SDL2.dll.zip.o: o/SDL2.dll
 	@mkdir -p $(dir $@)/.aarch64
 	@echo '$(SDL2_DLL_HASH)  o/SDL2.dll' | sha256sum --check --quiet
 	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a x86_64 -o $@ $<
 	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a aarch64 -o $(dir $@)/.aarch64/$(notdir $@) $<
-
-o/%.zip.o: %
+o/libSDL2.dylib.zip.o: o/libSDL2.dylib
 	@mkdir -p $(dir $@)/.aarch64
+	@echo '$(SDL2_DYLIB_HASH)  o/libSDL2.dylib' | sha256sum --check --quiet
 	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a x86_64 -o $@ $<
 	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a aarch64 -o $(dir $@)/.aarch64/$(notdir $@) $<
-o/%.zip.o: o/%
+
+o/%.zip.o: %
 	@mkdir -p $(dir $@)/.aarch64
 	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a x86_64 -o $@ $<
 	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a aarch64 -o $(dir $@)/.aarch64/$(notdir $@) $<

@@ -242,9 +242,26 @@ static void *ExtractDLL_x86_64(void)
     }
 }
 
+static void *ExtractDylib(void)
+{
+    int from_fd = open("/zip/libSDL2.dylib", O_RDONLY);
+    if (from_fd < 0) {
+        FFATALF(stderr, "could not open bundled libSDL2.dylib: %s", strerror(errno));
+    }
+
+    /* for now, just try the current directory */
+    if (TryDLLExtractPath(from_fd, "libSDL2.dylib")) {
+        close(from_fd);
+    	return cosmo_dlopen("./libSDL2.dylib", RTLD_LAZY | RTLD_LOCAL);
+    } else {
+        FFATALF(stderr, "ran out of paths to extract libSDL2.dylib to");
+    }
+}
+
 static void InitCosmoDynamicAPIOnce(void)
 {
     const char *libname_cascade[] = {
+	    "libSDL2.so",
 	    "libSDL2-2.0.so",
 	    "SDL2.dll",
 	    NULL
@@ -270,6 +287,14 @@ static void InitCosmoDynamicAPIOnce(void)
 #endif
 	if (lib == NULL) {
 	    FFATALF(stderr, "could not load bundled SDL2.dll after extracting: %s",
+			    cosmo_dlerror());
+	}
+    }
+
+    if (lib == NULL && IsXnu()) {
+	lib = ExtractDylib();
+	if (lib == NULL) {
+	    FFATALF(stderr, "could not load bundled libSDL2.dylib after extracting: %s",
 			    cosmo_dlerror());
 	}
     }

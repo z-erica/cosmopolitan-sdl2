@@ -12,10 +12,12 @@ existing [dynamic API facility](https://wiki.libsdl.org/SDL2/README/dynapi) to
 hook into a version of SDL that is specific to the current runtime platform.
 
 Currently, this dynamic version of SDL is obtained through the first of these steps that is successful:
-- If a shared object called `libSDL2-2.0.so` is available to
+- If a shared object called `libSDL2.so` is available to
   `cosmo_dlopen`, it is loaded, and the API shims hooked into it.
-- The same is attempted with the following fallback filenames, in order: `SDL2.dll`.
+- The same is attempted with the following fallback filenames, in order: `libSDL2-2.0.so`, `SDL2.dll`.
 - If the environment is x86\_64 Windows, then an official build of `SDL2.dll` is
+  extracted to the current directory and loaded.
+- If the environment is Mac OS X, then an official build of `libSDL2.dylib` is
   extracted to the current directory and loaded.
 
 See `sdl2/SDL_dynapi_cosmo.c` for specifics. Note that the previous process runs
