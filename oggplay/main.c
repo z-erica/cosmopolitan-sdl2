@@ -86,6 +86,7 @@ int main(int argc, char **argv) {
 		fprintf(stderr, "could not initialize sdl: %s\n", SDL_GetError());
 		return 3;
 	}
+	printf("audio driver: %s\n", SDL_GetCurrentAudioDriver());
 
 	inspec.freq = info.sample_rate;
 	inspec.format = AUDIO_F32;
