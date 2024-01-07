@@ -1,3 +1,8 @@
 Origin: https://github.com/ocornut/imgui
 License: see LICENSE
-Local changes: none
+Local changes:
+ - imgui_example.cpp is taken from example_sdl2_opengl3, and is modified
+   to use the vendored gl3w instead of imgui_impl_opengl3_loader.h
+ - imgui_impl_opengl3.c (as imgui_impl_opengl3.inc) is compiled as part
+   of imgui_example.cpp, so it has access to the gl procedure definitions
+   even with IMGUI_IMPL_OPENGL_LOADER_CUSTOM

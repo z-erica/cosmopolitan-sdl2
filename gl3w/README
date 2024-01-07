@@ -1,0 +1,4 @@
+Origin: https://github.com/skaslev/gl3w
+License: see UNLICENSE
+Local changes:
+ - Complete overhaul of gl3w_gen.py so it follows the same logic as SDL_dynapi_cosmo.c

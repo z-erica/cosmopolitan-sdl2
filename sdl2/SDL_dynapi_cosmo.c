@@ -38,6 +38,8 @@
 #include "SDL_syswm.h"
 #include "SDL_vulkan.h"
 
+/* mask the procedures which rely on callbacks/addresses that need to trampolined */
+
 /* Can't use the macro for varargs nonsense. This is atrocious. */
 #define SDL_DYNAPI_VARARGS_LOGFN(_static, name, initcall, logname, prio)                                     \
     _static void SDLCALL SDL_Log##logname##name(int category, SDL_PRINTF_FORMAT_STRING const char *fmt, ...) \
@@ -101,17 +103,6 @@
         va_start(ap, fmt);                                                                                                                \
         if (IsWindows()) retval = jump_table.SDL_vsnprintf.ms_abi(buf, maxlen, fmt, ap);                                                  \
         else retval = jump_table.SDL_vsnprintf.sysv_abi(buf, maxlen, fmt, ap);                                                            \
-        va_end(ap);                                                                                                                       \
-        return retval;                                                                                                                    \
-    }                                                                                                                                     \
-    _static int SDLCALL SDL_asprintf##name(char **strp, SDL_PRINTF_FORMAT_STRING const char *fmt, ...)                                    \
-    {                                                                                                                                     \
-        int retval;                                                                                                                       \
-        va_list ap;                                                                                                                       \
-        initcall;                                                                                                                         \
-        va_start(ap, fmt);                                                                                                                \
-        if (IsWindows()) retval = jump_table.SDL_vasprintf.ms_abi(strp, fmt, ap);                                                         \
-        else retval = jump_table.SDL_vasprintf.sysv_abi(strp, fmt, ap);                                                                   \
         va_end(ap);                                                                                                                       \
         return retval;                                                                                                                    \
     }                                                                                                                                     \

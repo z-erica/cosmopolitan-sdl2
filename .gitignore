@@ -6,3 +6,6 @@ imgui.ini
 lib*.a
 *.dll
 o
+gl3w/GL
+gl3w/KHR
+gl3w/gl3w.c
