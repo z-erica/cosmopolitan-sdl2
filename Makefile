@@ -13,7 +13,7 @@ SDL2_BUNDLED_RELEASE = 2.28.5
 
 SDL2_DLL = o/SDL2.dll
 SDL2_DLL_ZIP = o/SDL2-$(SDL2_BUNDLED_RELEASE)-win32-x64.zip
-SDL2_DLL_ZIP_URL = https://github.com/libsdl-org/SDL/releases/download/release-$(SDL2_DLL_RELEASE)/SDL2-$(SDL2_DLL_RELEASE)-win32-x64.zip
+SDL2_DLL_ZIP_URL = https://github.com/libsdl-org/SDL/releases/download/release-$(SDL2_BUNDLED_RELEASE)/SDL2-$(SDL2_BUNDLED_RELEASE)-win32-x64.zip
 # downloading opaque binaries off the internet is spooky!
 # so make sure its exactly a known version
 SDL2_DLL_HASH = de23db1694a3c7a4a735e7ecd3d214b2023cc2267922c6c35d30c7fc7370d677
@@ -57,6 +57,12 @@ $(SDL2_DLL_ZIP):
 	curl -L -o $@ $(SDL2_DLL_ZIP_URL)
 $(SDL2_DLL): $(SDL2_DLL_ZIP)
 	unzip -DD -o $< SDL2.dll -d o
+
+o/SDL2.dll.zip.o: o/SDL2.dll
+	@mkdir -p $(dir $@)/.aarch64
+	@echo '$(SDL2_DLL_HASH)  o/SDL2.dll' | sha256sum --check --quiet
+	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a x86_64 -o $@ $<
+	$(ZIPOBJ) $(ZIPOBJ_FLAGS) -a aarch64 -o $(dir $@)/.aarch64/$(notdir $@) $<
 
 o/%.zip.o: %
 	@mkdir -p $(dir $@)/.aarch64
