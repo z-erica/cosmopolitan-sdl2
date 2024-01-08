@@ -264,6 +264,7 @@ static void InitCosmoDynamicAPIOnce(void)
 #if !FORCE_BUNDLED_LIBRARY
 	    "libSDL2.so",
 	    "libSDL2-2.0.so",
+	    "libSDL2-2.0.so.0",
 	    "SDL2.dll",
 #endif
 	    NULL
