@@ -1,5 +1,7 @@
 # Cosmopolitan SDL2
 
+![screenshot of the Dear ImGui demo](screenshot.png)
+
 ## What is this?
 This is a compatibility layer that aims to allow access to a native version of
 [SDL](https://libsdl.org/) from portable executables linked through
@@ -20,9 +22,11 @@ Currently, this dynamic version of SDL is obtained through the first of these st
 - If the environment is Mac OS X, then an official build of `libSDL2.dylib` is
   extracted to the current directory and loaded.
 
-See `sdl2/SDL_dynapi_cosmo.c` for specifics. Note that the previous process runs
-the first time any SDL procedure is executed in any thread, and that failure is not
-recoverable.
+See `sdl2/SDL_dynapi_cosmo.c` for specifics. Note that the `SDL_CosmoInit` procedure,
+defined in `SDL_cosmo.h` (which replaces `SDL.h`), must be executed before any other SDL procedure
+so the hooks are properly set up. If this fails, the relevant error message must be obtained through
+`SDL_CosmoGetError` instead of `SDL_GetError`, since the latter is dynamically loaded. Neither
+`SDL_CosmoInit` or `SDL_CosmoGetError` are thread safe.
 
 ## How do you build this?
 You will need the [cosmocc](https://github.com/jart/cosmopolitan/blob/master/tool/cosmocc/README.md)

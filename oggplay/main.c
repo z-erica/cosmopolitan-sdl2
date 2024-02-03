@@ -1,4 +1,4 @@
-#include "SDL.h"
+#include "SDL_cosmo.h"
 #include "stb_vorbis.inc"
 #include <assert.h>
 
@@ -79,6 +79,12 @@ int main(int argc, char **argv) {
 	printf("vendor: %s\n", comment.vendor);
 	for (i=0; i<comment.comment_list_length; i+=1) {
 		printf("comment #%d: %s\n", i+1, comment.comment_list[i]);
+	}
+
+  rc = SDL_CosmoInit();
+	if (rc != 0) {
+		fprintf(stderr, "could not initialize cosmopolitan sdl: %s\n", SDL_CosmoGetError());
+		return 100;
 	}
 
 	rc = SDL_Init(SDL_INIT_AUDIO);

@@ -12,7 +12,7 @@
 #include "imgui_impl_sdl2.h"
 #include "imgui_impl_opengl3.h"
 #include <stdio.h>
-#include <SDL.h>
+#include <SDL_cosmo.h>
 #include "GL/gl3w.h"
 
 // This example can also compile and run with Emscripten! See 'Makefile.emscripten' for details.
@@ -25,6 +25,12 @@
 // Main code
 int main(int, char**)
 {
+    if (SDL_CosmoInit() != 0)
+    {
+        printf("Error: %s\n", SDL_CosmoGetError());
+        return -1;
+    }
+
     // Setup SDL
     if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_GAMECONTROLLER) != 0)
     {

@@ -43,6 +43,8 @@
 #include "SDL_syswm.h"
 #include "SDL_vulkan.h"
 
+static char cosmo_error[1024];
+
 /* all the procedures listed here necessarily rely on callbacks. mask them while we dont have a
  * prettier way to deal with them */
 #define SDL_SetAssertionHandler SDL_SetAssertionHandler_REAL
@@ -177,13 +179,10 @@ typedef struct
 /* The actual jump table. */
 static SDL_DYNAPI_jump_table jump_table = { 0 };
 
-static void InitCosmoDynamicAPI(void);
-
 /* Public API functions to jump into the jump table. */
 #define SDL_DYNAPI_PROC(rc, fn, params, args, ret)      \
     rc SDLCALL fn params                                \
     {                                                   \
-        InitCosmoDynamicAPI();                          \
 	if (IsWindows()) ret jump_table.fn.ms_abi args; \
 	else ret jump_table.fn.sysv_abi args;           \
     }
@@ -191,7 +190,7 @@ static void InitCosmoDynamicAPI(void);
 #include "SDL_dynapi_procs.inc"
 #undef SDL_DYNAPI_PROC
 #undef SDL_DYNAPI_PROC_NO_VARARGS
-SDL_DYNAPI_VARARGS(, , InitCosmoDynamicAPI())
+SDL_DYNAPI_VARARGS(, , )
 
 /* adapted from llamafile_extract */
 int ExtractFromZip(const char *zip, const char *to) {
@@ -242,23 +241,37 @@ int ExtractFromZip(const char *zip, const char *to) {
 
 static void *ExtractDLL_x86_64(void)
 {
+  void *dll;
     if (ExtractFromZip("/zip/SDL2.dll", "./SDL2.dll")) {
-    	return cosmo_dlopen("./SDL2.dll", RTLD_LAZY | RTLD_LOCAL);
+    	dll = cosmo_dlopen("./SDL2.dll", RTLD_LAZY | RTLD_LOCAL);
+	    if (!dll) snprintf(cosmo_error, sizeof cosmo_error,
+          "could not load bundled SDL2.dll after extracting: %s",
+			    cosmo_dlerror());
+      return dll;
     } else {
-        FFATALF(stderr, "could not extract SDL.dll");
+        snprintf(cosmo_error, sizeof cosmo_error,
+            "could not extract SDL.dll");
+        return NULL;
     }
 }
 
 static void *ExtractDylib(void)
 {
+  void *dll;
     if (ExtractFromZip("/zip/libSDL2.dylib", "./libSDL2.dylib")) {
-    	return cosmo_dlopen("./libSDL2.dylib", RTLD_LAZY | RTLD_LOCAL);
+    	dll = cosmo_dlopen("./libSDL2.dylib", RTLD_LAZY | RTLD_LOCAL);
+	    if (!dll) snprintf(cosmo_error, sizeof cosmo_error,
+          "could not load bundled libSDL2.dylib after extracting: %s",
+			    cosmo_dlerror());
+      return dll;
     } else {
-        FFATALF(stderr, "could not extract libSDL2.dylib");
+        snprintf(cosmo_error, sizeof cosmo_error,
+            "could not extract libSDL2.dylib");
+        return NULL;
     }
 }
 
-static void InitCosmoDynamicAPIOnce(void)
+int SDL_CosmoInit(void)
 {
     const char *libname_cascade[] = {
 #if !FORCE_BUNDLED_LIBRARY
@@ -286,24 +299,26 @@ static void InitCosmoDynamicAPIOnce(void)
 #ifdef __x86_64__
         lib = ExtractDLL_x86_64();
 #else
-	FFATALF(stderr, "bundled SDL2.dll for aarch64 not yet supported");
+	snprintf(cosmo_error, sizeof cosmo_error,
+      "bundled SDL2.dll for aarch64 not yet supported");
+  return 1;
 #endif
 	if (lib == NULL) {
-	    FFATALF(stderr, "could not load bundled SDL2.dll after extracting: %s",
-			    cosmo_dlerror());
+      return 1;
 	}
     }
 
     if (lib == NULL && IsXnu()) {
 	lib = ExtractDylib();
 	if (lib == NULL) {
-	    FFATALF(stderr, "could not load bundled libSDL2.dylib after extracting: %s",
-			    cosmo_dlerror());
+      return 1;
 	}
     }
 
     if (lib == NULL) {
-        FFATALF(stderr, "failed to load native SDL");
+        snprintf(cosmo_error, sizeof cosmo_error,
+            "failed to load native SDL");
+        return 1;
     }
 
 #define SDL_DYNAPI_PROC(rc, fn, params, args, ret)                         \
@@ -315,12 +330,11 @@ static void InitCosmoDynamicAPIOnce(void)
     if (!IsWindows()) jump_table.fn.ptr = cosmo_dltramp(jump_table.fn.ptr);
 #include "SDL_dynapi_procs.inc"
 #undef SDL_DYNAPI_PROC
+
+    return 0;
 }
 
-static void InitCosmoDynamicAPI(void)
-{
-    static pthread_once_t once = PTHREAD_ONCE_INIT;
-    pthread_once(&once, InitCosmoDynamicAPIOnce);
+const char *
+SDL_CosmoGetError(void) {
+  return cosmo_error;
 }
-
-
