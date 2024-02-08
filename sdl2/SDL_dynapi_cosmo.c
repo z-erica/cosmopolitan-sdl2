@@ -59,6 +59,9 @@ static char cosmo_error[1024];
 #define SDL_AddTimer SDL_AddTimer_REAL
 #define SDL_SetWindowHitTest SDL_SetWindowHitTest_REAL
 
+/* these only rely on callbacks in certain cases */
+#define SDL_OpenAudioDevice SDL_OpenAudioDevice_REAL
+
 /* set to 1 to skip the search for system libraries */
 #define FORCE_BUNDLED_LIBRARY 0
 
@@ -337,4 +340,55 @@ int SDL_CosmoInit(void)
 const char *
 SDL_CosmoGetError(void) {
   return cosmo_error;
+}
+
+/* wrappers over procedures that use callbacks */
+struct audio_callback_userdata {
+  void *userdata;
+  void (*callback)(void*,Uint8*,int);
+};
+
+static void
+audio_callback_sysv(void *opaque, Uint8 *stream, int len) {
+  struct audio_callback_userdata *wrapper = opaque;
+  wrapper->callback(wrapper->userdata, stream, len);
+}
+
+static void __attribute__((__ms_abi__))
+audio_callback_ms(void *opaque, Uint8 *stream, int len) {
+  audio_callback_sysv(opaque, stream, len);
+}
+
+#undef SDL_OpenAudioDevice
+SDL_AudioDeviceID SDL_OpenAudioDevice(
+    const char *device,
+    int iscapture,
+    const SDL_AudioSpec *desired,
+    SDL_AudioSpec *obtained,
+    int allowed_changes)
+{
+  struct audio_callback_userdata *wrapper;
+  SDL_AudioDeviceID result;
+  SDL_AudioSpec true_desired;
+
+  true_desired = *desired;
+  if (desired->callback) {
+    /* FIXME: this leaks memory */
+    wrapper = malloc(sizeof *wrapper);
+    if (!wrapper) {
+      SDL_SetError("out of memory");
+      return 0;
+    }
+    wrapper->userdata = desired->userdata;
+    true_desired.userdata = wrapper;
+    wrapper->callback = desired->callback;
+    if (IsWindows()) true_desired.callback = (void*)audio_callback_ms;
+    else true_desired.callback = audio_callback_sysv;
+  }
+
+  result = SDL_OpenAudioDevice_REAL(device, iscapture, &true_desired, obtained, allowed_changes);
+  if (result == 0) {
+    free(wrapper);
+  }
+  return result;
 }

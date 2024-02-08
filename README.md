@@ -58,3 +58,5 @@ transparently dispatches between calling conventions.
   This could potentially make fully self contained source builds more awkward, however.
 - Testing real code with callbacks from SDL.
 - Some way for errors in the dynamic api loading to be recoverable.
+- `SDL_OpenAudioDevice` leaks memory when a callback is used.
+- ftrace hooks break in the audio callback
