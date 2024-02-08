@@ -61,6 +61,7 @@ static char cosmo_error[1024];
 
 /* these only rely on callbacks in certain cases */
 #define SDL_OpenAudioDevice SDL_OpenAudioDevice_REAL
+#define SDL_OpenAudio SDL_OpenAudio_REAL
 
 /* set to 1 to skip the search for system libraries */
 #define FORCE_BUNDLED_LIBRARY 0
