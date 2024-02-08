@@ -1,0 +1,4 @@
+Origin: https://git.sr.ht/~rabbits/uxn, version 1.0
+License: see LICENSE
+Local changes:
+ - uxnemu.c uses cosmo initialization routines

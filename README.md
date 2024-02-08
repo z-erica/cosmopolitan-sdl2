@@ -36,6 +36,7 @@ portable executables:
 - `imgui_example.com` contains the demo of the [Dear ImGui](https://github.com/ocornut/imgui)
   immediate-mode user interface toolchain.
 - `oggplay.com` is a minimal player for OGG audio, built on top of [stb\_vorbis](https://github.com/nothings/stb).
+- `uxnemu.com` is an emulator for the [Uxn stack machine](https://100r.co/site/uxn.html).
 
 Please note that this process will download several files, including prebuilt binaries for some of the
 runtime targets. The hashes of these executable files are validated with known values to ensure the

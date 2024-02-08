@@ -40,7 +40,20 @@ OGGPLAY_EXAMPLE = o/oggplay_example.com
 OGGPLAY_EXAMPLE_OBJS = o/oggplay/main.o \
 		       $(SDL2_BUNDLED_OBJS)
 
-default: $(IMGUI_EXAMPLE) $(OGGPLAY_EXAMPLE)
+UXNEMU = o/uxnemu.com
+UXNEMU_OBJS = o/uxn/devices/datetime.o \
+							o/uxn/devices/system.o \
+							o/uxn/devices/console.o \
+							o/uxn/devices/file.o \
+							o/uxn/devices/audio.o \
+							o/uxn/devices/controller.o \
+							o/uxn/devices/mouse.o \
+							o/uxn/devices/screen.o \
+							o/uxn/uxn.o \
+							o/uxn/uxnemu.o \
+							$(SDL2_BUNDLED_OBJS)
+
+default: $(IMGUI_EXAMPLE) $(OGGPLAY_EXAMPLE) $(UXNEMU)
 
 $(SDL2_LIB): $(SDL2_LIB_OBJS)
 	$(AR) r $@ $^
@@ -49,6 +62,9 @@ $(IMGUI_EXAMPLE): $(IMGUI_EXAMPLE_OBJS) $(SDL2_LIB)
 	$(CC) $(LDLIBS) -o $@ $^
 
 $(OGGPLAY_EXAMPLE): $(OGGPLAY_EXAMPLE_OBJS) $(SDL2_LIB)
+	$(CC) $(LDLIBS) -o $@ $^
+
+$(UXNEMU): $(UXNEMU_OBJS) $(SDL2_LIB)
 	$(CC) $(LDLIBS) -o $@ $^
 
 o/gl3w/GL/gl3w.h: gl3w/gl3w_gen.py
